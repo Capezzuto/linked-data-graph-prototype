@@ -63,8 +63,14 @@ const dragHandlers = (simulation) => {
 
 const showTooltip = (evt, d) => {
   const tooltip = d3.select(container).select('#tooltip');
-  tooltip.style('top', `${evt.y}px`).style('left', `${evt.x}px`);
-  tooltip.node().showModal();
+  const [mx, my] = d3.pointer(evt);
+  tooltip
+    .style('top', my <= 0 ? `${evt.y + 24}px` : 'auto')
+    .style('bottom', my <= 0 ? 'auto' : `${height - (evt.y - 24)}px`)
+    .style('left', mx <= 0 ? `${evt.x - 24}px` : 'auto')
+    .style('right', mx <= 0 ? 'auto' : `${width - (evt.x + 24)}px`);
+
+  tooltip.node().show();
 };
 
 /**

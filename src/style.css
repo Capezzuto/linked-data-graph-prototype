@@ -57,4 +57,6 @@ body {
   margin: 0;
   position: absolute;
   z-index: 1;
+  max-width: 80%;
+  max-height: 240px;
 }
