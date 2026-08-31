@@ -29,17 +29,64 @@ const formattedData = Object.entries(data).reduce(
 );
 console.log('formattedData', formattedData);
 
+const root = d3.hierarchy(formattedData);
+const links = root.links();
+const nodes = root.descendants();
+console.log('links', links);
+console.log('nodes', nodes);
+
 /**
  * Render to page
  */
 
 const container = document.getElementById('app');
-console.log('container', container);
 const svg = d3
   .create('svg')
   .attr('width', width)
   .attr('height', height)
   .attr('viewbox', `0 0 ${width} ${height}`)
-  .style('background', '#333333');
+  .style('background', '#202828');
+
+const simulation = d3
+  .forceSimulation(nodes)
+  .force(
+    'link',
+    d3
+      .forceLink(links)
+      .id((d) => d.data?._label ?? d.data?.nodeData?._label)
+      .distance(20)
+      .strength(0.5),
+  )
+  .force('charge', d3.forceManyBody().strength(-80))
+  .force('x', d3.forceX())
+  .force('y', d3.forceY());
+
+const linkLines = svg
+  .append('g')
+  .style('transform', 'translate(50%, 50%)')
+  .selectAll('line')
+  .data(links)
+  .join('line')
+  .attr('stroke', '#666666');
+
+const nodeCircles = svg
+  .append('g')
+  .style('transform', 'translate(50%, 50%)')
+  .selectAll('circle')
+  .data(nodes)
+  .join('circle')
+  .attr('r', 6)
+  .attr('fill', '#ff0000')
+  .attr('stroke', '#888888');
 
 container.append(svg.node());
+
+simulation.on('tick', () => {
+  linkLines
+    .attr('x1', (d) => d.source.x)
+    .attr('y1', (d) => d.source.y)
+    .attr('x2', (d) => d.target.x)
+    .attr('y2', (d) => d.target.y);
+
+  nodeCircles.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
+});
