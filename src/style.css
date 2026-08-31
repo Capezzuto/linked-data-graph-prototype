@@ -47,3 +47,14 @@
 body {
   margin: 0;
 }
+
+#app {
+  display: inline-block;
+  position: relative;
+}
+
+#tooltip {
+  margin: 0;
+  position: absolute;
+  z-index: 1;
+}

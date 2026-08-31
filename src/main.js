@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 
 const width = Math.min(500, window.screen.width - 120);
 const height = Math.min(500, window.screen.height - 120);
+const container = document.getElementById('app');
 
 /**
  * Format data
@@ -60,11 +61,16 @@ const dragHandlers = (simulation) => {
   return d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
 };
 
+const showTooltip = (evt, d) => {
+  const tooltip = d3.select(container).select('#tooltip');
+  tooltip.style('top', `${evt.y}px`).style('left', `${evt.x}px`);
+  tooltip.node().showModal();
+};
+
 /**
  * Render to page
  */
 
-const container = document.getElementById('app');
 const svg = d3
   .create('svg')
   .attr('width', width)
@@ -104,6 +110,8 @@ const nodeCircles = svg
   .attr('fill', '#ff0000')
   .attr('stroke', '#888888')
   .call(dragHandlers(simulation));
+
+nodeCircles.on('click', showTooltip);
 
 container.append(svg.node());
 
