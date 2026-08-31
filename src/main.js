@@ -36,6 +36,31 @@ console.log('links', links);
 console.log('nodes', nodes);
 
 /**
+ * Event Handlers
+ */
+// Implementation from https://observablehq.com/@d3/force-directed-tree
+const dragHandlers = (simulation) => {
+  function dragstarted(event, d) {
+    if (!event.active) simulation.alphaTarget(0.3).restart();
+    d.fx = d.x;
+    d.fy = d.y;
+  }
+
+  function dragged(event, d) {
+    d.fx = event.x;
+    d.fy = event.y;
+  }
+
+  function dragended(event, d) {
+    if (!event.active) simulation.alphaTarget(0);
+    d.fx = null;
+    d.fy = null;
+  }
+
+  return d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
+};
+
+/**
  * Render to page
  */
 
@@ -77,7 +102,8 @@ const nodeCircles = svg
   .join('circle')
   .attr('r', 6)
   .attr('fill', '#ff0000')
-  .attr('stroke', '#888888');
+  .attr('stroke', '#888888')
+  .call(dragHandlers(simulation));
 
 container.append(svg.node());
 
