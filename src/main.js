@@ -3,6 +3,21 @@ import * as d3 from 'd3';
 const width = Math.min(500, window.screen.width - 120);
 const height = Math.min(500, window.screen.height - 120);
 const container = document.getElementById('app');
+const nodeRadii = {
+  0: 10,
+  1: 7,
+  2: 7,
+  3: 6,
+  4: 6,
+  5: 6,
+  6: 5,
+  7: 5,
+  8: 4,
+  9: 4,
+  10: 4,
+  11: 4,
+  12: 4,
+};
 
 /**
  * Format data
@@ -14,31 +29,35 @@ console.log('data', data);
 const formatData = (result, entry) => {
   // default property seems to reproduce structure of larger object, so omit for now
   if (entry[0] === 'default') return result;
+
   if (typeof entry[1] === 'string') {
     result.nodeData[entry[0]] = entry[1];
     return result;
   }
+
   if (typeof entry[1] === 'object') {
     const isArray = Array.isArray(entry[1]);
-
     result.children.push({
+      nodeDepth: result.nodeDepth + 1,
       nodeData: isArray ? { _label: entry[0] } : { ...entry[1] },
       children: isArray
         ? entry[1].map((n) => {
-            console.log('typeof n', typeof n);
             if (typeof n === 'object') {
-              return Object.entries(n).reduce(formatData, { nodeData: {}, children: [] });
+              return Object.entries(n).reduce(formatData, {
+                nodeDepth: result.nodeDepth + 2,
+                nodeData: {},
+                children: [],
+              });
             }
             return n;
           })
         : [],
     });
-    return result;
   }
   return result;
 };
 
-const formattedData = Object.entries(data).reduce(formatData, { nodeData: {}, children: [] });
+const formattedData = Object.entries(data).reduce(formatData, { nodeDepth: 0, nodeData: {}, children: [] });
 console.log('formattedData', formattedData);
 
 const root = d3.hierarchy(formattedData);
@@ -46,9 +65,9 @@ const links = root.links();
 const nodes = root.descendants();
 const depth = Math.min(
   nodes.reduce((max, node) => Math.max(node.depth + 1, max), 0),
-  9,
+  12,
 );
-const color = d3.scaleOrdinal(d3.schemeYlOrRd[depth]);
+const color = d3.scaleOrdinal(d3.schemeRdYlBu[depth]);
 console.log('links', links);
 console.log('nodes', nodes);
 
@@ -103,8 +122,8 @@ const svg = d3
 
 const simulation = d3
   .forceSimulation(nodes)
-  .force('link', d3.forceLink(links).distance(2).strength(0.8))
-  .force('charge', d3.forceManyBody().strength(-80))
+  .force('link', d3.forceLink(links).distance(0).strength(1))
+  .force('charge', d3.forceManyBody().strength(-20))
   .force('x', d3.forceX())
   .force('y', d3.forceY());
 
@@ -122,7 +141,7 @@ const nodeCircles = svg
   .selectAll('circle')
   .data(nodes)
   .join('circle')
-  .attr('r', 6)
+  .attr('r', (d) => nodeRadii[d.depth] ?? 4)
   .attr('fill', (d) => color(d.depth))
   .attr('stroke', '#888888')
   .call(dragHandlers(simulation));
