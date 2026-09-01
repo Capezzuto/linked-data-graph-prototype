@@ -19,6 +19,15 @@ const nodeRadii = {
   12: 4,
 };
 
+const svg = d3
+  .create('svg')
+  .attr('width', width)
+  .attr('height', height)
+  .attr('viewbox', `${width / 2} ${height / 2} ${width} ${height}`)
+  .style('background', '#202828');
+
+const group = svg.append('g');
+
 /**
  * Format data
  */
@@ -119,6 +128,7 @@ const showTooltip = (evt, d) => {
     }
     return output + `<p class='tooltip-text'><b>${entry[0]}:</b> ${entry[1]}</p>`;
   }, '');
+
   tooltip
     .style('top', my <= 0 ? `${evt.y + 24}px` : 'auto')
     .style('bottom', my <= 0 ? 'auto' : `${height - (evt.y - 24)}px`)
@@ -126,18 +136,22 @@ const showTooltip = (evt, d) => {
     .style('right', mx <= 0 ? 'auto' : `${width - (evt.x + 24)}px`);
   tooltip.html(html);
   tooltip.node().show();
+  tooltip.node().focus();
 };
+
+function zoomed(evt) {
+  const { transform } = evt;
+  group.attr('transform', transform);
+  group.attr('stroke-width', 1 / transform.k);
+}
+
+const zoom = d3.zoom().scaleExtent([1, 3]).on('zoom', zoomed);
+
+svg.call(zoom);
 
 /**
  * Render to page
  */
-
-const svg = d3
-  .create('svg')
-  .attr('width', width)
-  .attr('height', height)
-  .attr('viewbox', `0 0 ${width} ${height}`)
-  .style('background', '#202828');
 
 const simulation = d3
   .forceSimulation(nodes)
@@ -146,7 +160,7 @@ const simulation = d3
   .force('x', d3.forceX())
   .force('y', d3.forceY());
 
-const linkLines = svg
+const linkLines = group
   .append('g')
   .style('transform', 'translate(50%, 50%)')
   .selectAll('line')
@@ -154,7 +168,7 @@ const linkLines = svg
   .join('line')
   .attr('stroke', '#666666');
 
-const nodeCircles = svg
+const nodeCircles = group
   .append('g')
   .style('transform', 'translate(50%, 50%)')
   .selectAll('circle')
