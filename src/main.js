@@ -38,10 +38,8 @@ const group = svg.append('g');
  */
 // const data = fetch('https://data.getty.edu/museum/collection/object/ee0325a5-c8f6-4cae-9fb3-d67310989297');
 const data = await import('./assets/response.json');
-console.log('data', data);
 
 const formattedData = Object.entries(data).reduce(formatData, { nodeDepth: 0, nodeData: {}, children: [] });
-console.log('formattedData', formattedData);
 
 const root = d3.hierarchy(formattedData);
 const links = root.links();
@@ -51,8 +49,6 @@ const depth = Math.min(
   12, // if this value is more than 12 (using schemeRdYlBu), d3 will throw an error
 );
 const color = d3.scaleOrdinal(d3.schemeRdYlBu[depth]);
-console.log('links', links);
-console.log('nodes', nodes);
 
 /**
  * Render to page
