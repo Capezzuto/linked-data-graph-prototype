@@ -11,30 +11,44 @@ const container = document.getElementById('app');
 const data = await import('./assets/response.json');
 console.log('data', data);
 
-const formattedData = Object.entries(data).reduce(
-  (result, entry) => {
-    // default property seems to reproduce structure of larger object, so omit for now
-    if (entry[0] === 'default') return result;
-    if (typeof entry[1] === 'string') {
-      result.nodeData[entry[0]] = entry[1];
-      return result;
-    }
-    if (typeof entry[1] === 'object') {
-      const isArray = Array.isArray(entry[1]);
-      result.children.push({
-        nodeData: isArray ? { _label: entry[0] } : { ...entry[1] },
-        children: isArray ? entry[1] : [],
-      });
-      return result;
-    }
-  },
-  { nodeData: {}, children: [] },
-);
+const formatData = (result, entry) => {
+  // default property seems to reproduce structure of larger object, so omit for now
+  if (entry[0] === 'default') return result;
+  if (typeof entry[1] === 'string') {
+    result.nodeData[entry[0]] = entry[1];
+    return result;
+  }
+  if (typeof entry[1] === 'object') {
+    const isArray = Array.isArray(entry[1]);
+
+    result.children.push({
+      nodeData: isArray ? { _label: entry[0] } : { ...entry[1] },
+      children: isArray
+        ? entry[1].map((n) => {
+            console.log('typeof n', typeof n);
+            if (typeof n === 'object') {
+              return Object.entries(n).reduce(formatData, { nodeData: {}, children: [] });
+            }
+            return n;
+          })
+        : [],
+    });
+    return result;
+  }
+  return result;
+};
+
+const formattedData = Object.entries(data).reduce(formatData, { nodeData: {}, children: [] });
 console.log('formattedData', formattedData);
 
 const root = d3.hierarchy(formattedData);
 const links = root.links();
 const nodes = root.descendants();
+const depth = Math.min(
+  nodes.reduce((max, node) => Math.max(node.depth + 1, max), 0),
+  9,
+);
+const color = d3.scaleOrdinal(d3.schemeYlOrRd[depth]);
 console.log('links', links);
 console.log('nodes', nodes);
 
@@ -66,12 +80,13 @@ const dragHandlers = (simulation) => {
 const showTooltip = (evt, d) => {
   const tooltip = d3.select(container).select('#tooltip');
   const [mx, my] = d3.pointer(evt);
+  console.log('d', d);
   tooltip
     .style('top', my <= 0 ? `${evt.y + 24}px` : 'auto')
     .style('bottom', my <= 0 ? 'auto' : `${height - (evt.y - 24)}px`)
     .style('left', mx <= 0 ? `${evt.x - 24}px` : 'auto')
     .style('right', mx <= 0 ? 'auto' : `${width - (evt.x + 24)}px`);
-
+  tooltip.text(JSON.stringify(d.data?.nodeData ?? d.data));
   tooltip.node().show();
 };
 
@@ -88,14 +103,7 @@ const svg = d3
 
 const simulation = d3
   .forceSimulation(nodes)
-  .force(
-    'link',
-    d3
-      .forceLink(links)
-      .id((d) => d.data?._label ?? d.data?.nodeData?._label)
-      .distance(20)
-      .strength(0.5),
-  )
+  .force('link', d3.forceLink(links).distance(2).strength(0.8))
   .force('charge', d3.forceManyBody().strength(-80))
   .force('x', d3.forceX())
   .force('y', d3.forceY());
@@ -115,7 +123,7 @@ const nodeCircles = svg
   .data(nodes)
   .join('circle')
   .attr('r', 6)
-  .attr('fill', '#ff0000')
+  .attr('fill', (d) => color(d.depth))
   .attr('stroke', '#888888')
   .call(dragHandlers(simulation));
 
