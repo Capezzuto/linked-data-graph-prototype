@@ -1,10 +1,13 @@
 import * as d3 from 'd3';
+import { formatData } from './format.js';
+import { zoomHandler, dragHandlers, tooltipHandlers } from './handlers.js';
 
 const width = Math.min(500, window.screen.width - 120);
 const height = Math.min(500, window.screen.height - 120);
 const container = document.getElementById('app');
 const tooltip = d3.select(container).select('#tooltip');
 let tooltipTarget;
+
 const nodeRadii = {
   0: 10,
   1: 7,
@@ -37,45 +40,6 @@ const group = svg.append('g');
 const data = await import('./assets/response.json');
 console.log('data', data);
 
-const formatData = (result, entry) => {
-  // default property seems to reproduce structure of larger object, so omit for now
-  if (entry[0] === 'default') return result;
-
-  if (typeof entry[1] === 'string') {
-    result.nodeData[entry[0]] = entry[1];
-    return result;
-  }
-
-  if (typeof entry[1] === 'object') {
-    const isArray = Array.isArray(entry[1]);
-    if (isArray) {
-      result.children.push({
-        nodeDepth: result.nodeDepth + 1,
-        nodeData: { _label: entry[0] },
-        children: entry[1].map((n) => {
-          if (typeof n === 'object') {
-            return Object.entries(n).reduce(formatData, {
-              nodeDepth: result.nodeDepth + 2,
-              nodeData: {},
-              children: [],
-            });
-          }
-          return n;
-        }),
-      });
-      // check for null
-    } else if (entry[1]) {
-      let formatted = Object.entries(entry[1]).reduce(formatData, {
-        nodeDepth: result.nodeDepth + 1,
-        nodeData: {},
-        children: [],
-      });
-      result.children.push(formatted);
-    }
-  }
-  return result;
-};
-
 const formattedData = Object.entries(data).reduce(formatData, { nodeDepth: 0, nodeData: {}, children: [] });
 console.log('formattedData', formattedData);
 
@@ -89,79 +53,6 @@ const depth = Math.min(
 const color = d3.scaleOrdinal(d3.schemeRdYlBu[depth]);
 console.log('links', links);
 console.log('nodes', nodes);
-
-/**
- * Event Handlers
- */
-// Dragging
-// Implementation from https://observablehq.com/@d3/force-directed-tree
-const dragHandlers = (simulation) => {
-  function dragstarted(event, d) {
-    if (!event.active) simulation.alphaTarget(0.3).restart();
-    d.fx = d.x;
-    d.fy = d.y;
-  }
-
-  function dragged(event, d) {
-    d.fx = event.x;
-    d.fy = event.y;
-  }
-
-  function dragended(event, d) {
-    if (!event.active) simulation.alphaTarget(0);
-    d.fx = null;
-    d.fy = null;
-  }
-
-  return d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
-};
-
-// Tooltips
-const showTooltip = (evt, d) => {
-  const [mx, my] = d3.pointer(evt);
-  const nodeData = d.data?.nodeData ?? d.data;
-  const html = Object.entries(nodeData).reduce((output, entry) => {
-    if (entry[0] === 'id') {
-      return (
-        output
-        + `<p class='tooltip-text'>
-        <b>${entry[0]}:</b> <a href="${entry[1]}" rel="nofollow">${entry[1]}</a>
-        </p>`
-      );
-    }
-    return output + `<p class='tooltip-text'><b>${entry[0]}:</b> ${entry[1]}</p>`;
-  }, '');
-
-  tooltipTarget?.attr('fill', (d) => color(d.depth));
-  tooltipTarget = d3.select(evt.target);
-  setTimeout(() => {
-    tooltipTarget.attr('fill', '#00ff00');
-  }, 0);
-
-  tooltip
-    .style('top', my <= 0 ? `${evt.y + 24}px` : 'auto')
-    .style('bottom', my <= 0 ? 'auto' : `${height - (evt.y - 24)}px`)
-    .style('left', mx <= 0 ? `${evt.x - 24}px` : 'auto')
-    .style('right', mx <= 0 ? 'auto' : `${width - (evt.x + 24)}px`);
-  tooltip.html(html);
-  tooltip.node().show();
-  tooltip.node().focus();
-};
-
-tooltip.node().addEventListener('close', (evt) => {
-  tooltipTarget.attr('fill', (d) => color(d.depth));
-});
-
-// Zoom
-function zoomed(evt) {
-  const { transform } = evt;
-  group.attr('transform', transform);
-  group.attr('stroke-width', 1 / transform.k);
-}
-
-const zoom = d3.zoom().scaleExtent([1, 3]).on('zoom', zoomed);
-
-svg.call(zoom);
 
 /**
  * Render to page
@@ -190,9 +81,10 @@ const nodeCircles = group
   .attr('r', (d) => nodeRadii[d.depth] ?? 4)
   .attr('fill', (d) => color(d.depth))
   .attr('stroke', '#888888')
+  .call(tooltipHandlers, { tooltip, tooltipTarget, width, height, color })
   .call(dragHandlers(simulation));
 
-nodeCircles.on('click', showTooltip);
+svg.call(zoomHandler(group));
 
 container.append(svg.node());
 
