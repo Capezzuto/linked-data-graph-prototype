@@ -3,6 +3,8 @@ import * as d3 from 'd3';
 const width = Math.min(500, window.screen.width - 120);
 const height = Math.min(500, window.screen.height - 120);
 const container = document.getElementById('app');
+const tooltip = d3.select(container).select('#tooltip');
+let tooltipTarget;
 const nodeRadii = {
   0: 10,
   1: 7,
@@ -81,8 +83,8 @@ const root = d3.hierarchy(formattedData);
 const links = root.links();
 const nodes = root.descendants();
 const depth = Math.min(
-  nodes.reduce((max, node) => Math.max(node.depth + 1, max), 0),
-  12,
+  nodes.reduce((max, n) => Math.max(n.depth + 1, max), 0),
+  12, // if this value is more than 12 (using schemeRdYlBu), d3 will throw an error
 );
 const color = d3.scaleOrdinal(d3.schemeRdYlBu[depth]);
 console.log('links', links);
@@ -91,6 +93,7 @@ console.log('nodes', nodes);
 /**
  * Event Handlers
  */
+// Dragging
 // Implementation from https://observablehq.com/@d3/force-directed-tree
 const dragHandlers = (simulation) => {
   function dragstarted(event, d) {
@@ -113,8 +116,8 @@ const dragHandlers = (simulation) => {
   return d3.drag().on('start', dragstarted).on('drag', dragged).on('end', dragended);
 };
 
+// Tooltips
 const showTooltip = (evt, d) => {
-  const tooltip = d3.select(container).select('#tooltip');
   const [mx, my] = d3.pointer(evt);
   const nodeData = d.data?.nodeData ?? d.data;
   const html = Object.entries(nodeData).reduce((output, entry) => {
@@ -129,6 +132,12 @@ const showTooltip = (evt, d) => {
     return output + `<p class='tooltip-text'><b>${entry[0]}:</b> ${entry[1]}</p>`;
   }, '');
 
+  tooltipTarget?.attr('fill', (d) => color(d.depth));
+  tooltipTarget = d3.select(evt.target);
+  setTimeout(() => {
+    tooltipTarget.attr('fill', '#00ff00');
+  }, 0);
+
   tooltip
     .style('top', my <= 0 ? `${evt.y + 24}px` : 'auto')
     .style('bottom', my <= 0 ? 'auto' : `${height - (evt.y - 24)}px`)
@@ -139,6 +148,11 @@ const showTooltip = (evt, d) => {
   tooltip.node().focus();
 };
 
+tooltip.node().addEventListener('close', (evt) => {
+  tooltipTarget.attr('fill', (d) => color(d.depth));
+});
+
+// Zoom
 function zoomed(evt) {
   const { transform } = evt;
   group.attr('transform', transform);
@@ -152,7 +166,6 @@ svg.call(zoom);
 /**
  * Render to page
  */
-
 const simulation = d3
   .forceSimulation(nodes)
   .force('link', d3.forceLink(links).distance(0).strength(1))
