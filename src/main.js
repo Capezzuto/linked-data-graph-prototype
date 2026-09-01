@@ -38,18 +38,18 @@ const formatData = (result, entry) => {
   if (typeof entry[1] === 'object') {
     const isArray = Array.isArray(entry[1]);
     if (isArray) {
-    result.children.push({
-      nodeDepth: result.nodeDepth + 1,
+      result.children.push({
+        nodeDepth: result.nodeDepth + 1,
         nodeData: { _label: entry[0] },
         children: entry[1].map((n) => {
-            if (typeof n === 'object') {
-              return Object.entries(n).reduce(formatData, {
-                nodeDepth: result.nodeDepth + 2,
-                nodeData: {},
-                children: [],
-              });
-            }
-            return n;
+          if (typeof n === 'object') {
+            return Object.entries(n).reduce(formatData, {
+              nodeDepth: result.nodeDepth + 2,
+              nodeData: {},
+              children: [],
+            });
+          }
+          return n;
         }),
       });
       // check for null
@@ -58,7 +58,7 @@ const formatData = (result, entry) => {
         nodeDepth: result.nodeDepth + 1,
         nodeData: {},
         children: [],
-    });
+      });
       result.children.push(formatted);
     }
   }
@@ -107,13 +107,24 @@ const dragHandlers = (simulation) => {
 const showTooltip = (evt, d) => {
   const tooltip = d3.select(container).select('#tooltip');
   const [mx, my] = d3.pointer(evt);
-  console.log('d', d);
+  const nodeData = d.data?.nodeData ?? d.data;
+  const html = Object.entries(nodeData).reduce((output, entry) => {
+    if (entry[0] === 'id') {
+      return (
+        output
+        + `<p class='tooltip-text'>
+        <b>${entry[0]}:</b> <a href="${entry[1]}" rel="nofollow">${entry[1]}</a>
+        </p>`
+      );
+    }
+    return output + `<p class='tooltip-text'><b>${entry[0]}:</b> ${entry[1]}</p>`;
+  }, '');
   tooltip
     .style('top', my <= 0 ? `${evt.y + 24}px` : 'auto')
     .style('bottom', my <= 0 ? 'auto' : `${height - (evt.y - 24)}px`)
     .style('left', mx <= 0 ? `${evt.x - 24}px` : 'auto')
     .style('right', mx <= 0 ? 'auto' : `${width - (evt.x + 24)}px`);
-  tooltip.text(JSON.stringify(d.data?.nodeData ?? d.data));
+  tooltip.html(html);
   tooltip.node().show();
 };
 

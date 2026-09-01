@@ -60,3 +60,12 @@ body {
   max-width: 80%;
   max-height: 240px;
 }
+
+.tooltip-container {
+}
+
+.tooltip-text {
+  font-size: 11px;
+  margin: 0;
+  line-height: 1.2;
+}
