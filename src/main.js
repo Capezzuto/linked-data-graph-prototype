@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { formatData } from './format.js';
-import { zoomHandler, dragHandlers, tooltipHandlers, getApiUrl, checkInput, setErrorMessage } from './handlers.js';
+import { zoomHandler, dragHandlers, tooltipHandlers, getApiData, checkInput, setErrorMessage } from './handlers.js';
 
 const width = Math.min(800, window.screen.width - 120);
 const height = Math.min(800, window.screen.height - 120);
@@ -94,7 +94,7 @@ import('./assets/response.json').then((data) => {
 input.addEventListener('input', checkInput);
 
 getRecordsButton.addEventListener('click', () => {
-  getApiUrl()
+  getApiData()
     .then((data) => {
       renderGraph(data);
     })

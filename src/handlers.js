@@ -91,7 +91,7 @@ export const setErrorMessage = (error) => {
   messageElem.innerText = error;
 };
 
-export const getApiUrl = async () => {
+export const getApiData = async () => {
   const input = document.getElementById('apiUrlField');
   const url = input.value;
   const error = _validate(url);
