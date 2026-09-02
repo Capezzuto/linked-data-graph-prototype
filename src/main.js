@@ -1,15 +1,16 @@
 import * as d3 from 'd3';
 import { formatData } from './format.js';
-import { zoomHandler, dragHandlers, tooltipHandlers, getApiUrl } from './handlers.js';
+import { zoomHandler, dragHandlers, tooltipHandlers, getApiUrl, checkInput } from './handlers.js';
 
 const width = Math.min(800, window.screen.width - 120);
 const height = Math.min(800, window.screen.height - 120);
 const container = document.getElementById('app');
 const getRecordsButton = document.getElementById('getRecordsButton');
+const input = document.getElementById('apiUrlField');
 const tooltip = d3.select(container).select('#tooltip');
 let tooltipTarget;
 
-const nodeRadii = {
+const NODE_RADII = {
   0: 10,
   1: 7,
   2: 7,
@@ -25,6 +26,7 @@ const nodeRadii = {
   12: 4,
 };
 
+// set up graph structure (this part will not change with changes to data)
 const svg = d3
   .create('svg')
   .attr('width', width)
@@ -40,22 +42,12 @@ const simulation = d3
   .force('charge', d3.forceManyBody().strength(-20))
   .force('x', d3.forceX())
   .force('y', d3.forceY());
+
 let linkLines = group.append('g').style('transform', 'translate(50%, 50%)').selectAll('line');
 let nodeCircles = group.append('g').style('transform', 'translate(50%, 50%)').selectAll('circle');
 
-/**
- * Format data
- */
-
-// const data = fetch('https://data.getty.edu/museum/collection/object/ee0325a5-c8f6-4cae-9fb3-d67310989297');
-import('./assets/response.json').then((data) => {
-  renderGraph(data);
-});
-
-/**
- * Render to page
- */
 function renderGraph(data) {
+  // format data
   const formattedData = Object.entries(data).reduce(formatData, { nodeDepth: 0, nodeData: {}, children: [] });
 
   const root = d3.hierarchy(formattedData);
@@ -69,7 +61,7 @@ function renderGraph(data) {
   nodeCircles = nodeCircles
     .data(nodes)
     .join('circle')
-    .attr('r', (d) => nodeRadii[d.depth] ?? 4)
+    .attr('r', (d) => NODE_RADII[d.depth] ?? 4)
     .attr('fill', (d) => color(d.depth))
     .attr('stroke', '#888888')
     .call(tooltipHandlers, { tooltip, tooltipTarget, width, height, color })
@@ -78,6 +70,7 @@ function renderGraph(data) {
   svg.call(zoomHandler(group));
 
   container.append(svg.node());
+
   simulation.force('link').links(links);
   simulation.nodes(nodes);
   simulation.alpha(1).restart();
@@ -93,8 +86,19 @@ function renderGraph(data) {
   });
 }
 
+// const data = fetch('https://data.getty.edu/museum/collection/object/ee0325a5-c8f6-4cae-9fb3-d67310989297');
+import('./assets/response.json').then((data) => {
+  renderGraph(data);
+});
+
+input.addEventListener('input', checkInput);
+
 getRecordsButton.addEventListener('click', () => {
-  getApiUrl().then((data) => {
-    renderGraph(data);
-  });
+  getApiUrl()
+    .then((data) => {
+      renderGraph(data);
+    })
+    .catch((err) => {
+      return;
+    });
 });

@@ -59,7 +59,7 @@ export const tooltipHandlers = (selection, { tooltip, tooltipTarget, width, heig
   }
 
   function restoreColor() {
-    tooltipTarget.attr('fill', (d) => color(d.depth));
+    tooltipTarget?.attr('fill', (d) => color(d.depth));
   }
 
   selection.on('click', showTooltip);
@@ -86,19 +86,29 @@ const validate = (str) => {
   if (!regex.test(str)) return 'Please enter a valid url';
 };
 
-export const getApiUrl = async () => {
+export const getApiUrl = () => {
   const input = document.getElementById('apiUrlField');
   const url = input.value;
 
   const error = validate(url);
 
   if (error) {
-    // handle error, then return
     input.setCustomValidity(error);
-    console.log('error', error);
+    return new Promise((_, reject) => {
+      reject(new Error(error));
+    });
+  }
+  input.setCustomValidity('');
+  return fetch(url).then((res) => res.json());
+};
+
+export const checkInput = (evt) => {
+  const input = evt.currentTarget;
+  console.log('input.value', input.value);
+  const error = validate(input.value);
+  if (error) {
+    input.setCustomValidity(error);
     return;
   }
   input.setCustomValidity('');
-  const response = await fetch(url);
-  return response.json();
 };
