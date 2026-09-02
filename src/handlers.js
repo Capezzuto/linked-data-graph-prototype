@@ -73,3 +73,15 @@ export const zoomHandler = (g) => {
 
   return d3.zoom().scaleExtent([1, 3]).on('zoom', zoomed);
 };
+
+// Input field
+const validate = (str) => {
+  const regex =
+    /^(https\:\/\/|http\:\/\/|)data\.getty\.edu\/museum\/collection\/(object|place|document|group|person|exhibition|activity)/g;
+  if (regex.test(str)) console.log('Passed validation');
+  else console.log('Failed validation');
+};
+
+export const getApiUrl = () => {
+  validate('https://data.getty.edu/museum/collection/object/e728fadd-4e33-4b09-8325-2b572b307871');
+};

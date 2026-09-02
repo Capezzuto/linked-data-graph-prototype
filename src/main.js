@@ -1,9 +1,9 @@
 import * as d3 from 'd3';
 import { formatData } from './format.js';
-import { zoomHandler, dragHandlers, tooltipHandlers } from './handlers.js';
+import { zoomHandler, dragHandlers, tooltipHandlers, getApiUrl } from './handlers.js';
 
-const width = Math.min(500, window.screen.width - 120);
-const height = Math.min(500, window.screen.height - 120);
+const width = Math.min(800, window.screen.width - 120);
+const height = Math.min(800, window.screen.height - 120);
 const container = document.getElementById('app');
 const tooltip = d3.select(container).select('#tooltip');
 let tooltipTarget;
@@ -93,3 +93,6 @@ simulation.on('tick', () => {
 
   nodeCircles.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
 });
+
+const getRecordsButton = document.getElementById('getRecordsButton');
+getRecordsButton.addEventListener('click', getApiUrl);
