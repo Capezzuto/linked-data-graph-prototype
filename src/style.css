@@ -103,11 +103,11 @@ body {
 }
 
 .input-container input:user-invalid {
-  border-color: #aa4242;
+  border-color: #ff6666;
 }
 
 .input-container .input-error {
-  color: #aa4242;
+  color: #ff6666;
   position: absolute;
   top: 3em;
   left: 20px;
