@@ -82,10 +82,23 @@ export const zoomHandler = (g) => {
 const validate = (str) => {
   const regex =
     /^(https\:\/\/|http\:\/\/|)data\.getty\.edu\/museum\/collection\/(object|place|document|group|person|exhibition|activity)/g;
-  if (regex.test(str)) console.log('Passed validation');
-  else console.log('Failed validation');
+  if (!str) return 'Please enter a valid url';
+  if (!regex.test(str)) return 'Please enter a valid url';
 };
 
-export const getApiUrl = () => {
-  validate('https://data.getty.edu/museum/collection/object/e728fadd-4e33-4b09-8325-2b572b307871');
+export const getApiUrl = async () => {
+  const input = document.getElementById('apiUrlField');
+  const url = input.value;
+
+  const error = validate(url);
+
+  if (error) {
+    // handle error, then return
+    input.setCustomValidity(error);
+    console.log('error', error);
+    return;
+  }
+  input.setCustomValidity('');
+  const response = await fetch(url);
+  return response.json();
 };

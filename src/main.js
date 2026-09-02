@@ -5,6 +5,7 @@ import { zoomHandler, dragHandlers, tooltipHandlers, getApiUrl } from './handler
 const width = Math.min(800, window.screen.width - 120);
 const height = Math.min(800, window.screen.height - 120);
 const container = document.getElementById('app');
+const getRecordsButton = document.getElementById('getRecordsButton');
 const tooltip = d3.select(container).select('#tooltip');
 let tooltipTarget;
 
@@ -33,66 +34,67 @@ const svg = d3
 
 const group = svg.append('g');
 
+const simulation = d3
+  .forceSimulation()
+  .force('link', d3.forceLink().distance(0).strength(1))
+  .force('charge', d3.forceManyBody().strength(-20))
+  .force('x', d3.forceX())
+  .force('y', d3.forceY());
+let linkLines = group.append('g').style('transform', 'translate(50%, 50%)').selectAll('line');
+let nodeCircles = group.append('g').style('transform', 'translate(50%, 50%)').selectAll('circle');
+
 /**
  * Format data
  */
+
 // const data = fetch('https://data.getty.edu/museum/collection/object/ee0325a5-c8f6-4cae-9fb3-d67310989297');
-const data = await import('./assets/response.json');
-
-const formattedData = Object.entries(data).reduce(formatData, { nodeDepth: 0, nodeData: {}, children: [] });
-
-const root = d3.hierarchy(formattedData);
-const links = root.links();
-const nodes = root.descendants();
-const depth = Math.min(
-  nodes.reduce((max, n) => Math.max(n.depth + 1, max), 0),
-  12, // if this value is more than 12 (using schemeRdYlBu), d3 will throw an error
-);
-const color = d3.scaleOrdinal(d3.schemeRdYlBu[depth]);
+import('./assets/response.json').then((data) => {
+  renderGraph(data);
+});
 
 /**
  * Render to page
  */
-const simulation = d3
-  .forceSimulation(nodes)
-  .force('link', d3.forceLink(links).distance(0).strength(1))
-  .force('charge', d3.forceManyBody().strength(-20))
-  .force('x', d3.forceX())
-  .force('y', d3.forceY());
+function renderGraph(data) {
+  const formattedData = Object.entries(data).reduce(formatData, { nodeDepth: 0, nodeData: {}, children: [] });
 
-const linkLines = group
-  .append('g')
-  .style('transform', 'translate(50%, 50%)')
-  .selectAll('line')
-  .data(links)
-  .join('line')
-  .attr('stroke', '#666666');
+  const root = d3.hierarchy(formattedData);
+  const links = root.links();
+  const nodes = root.descendants();
+  const depth = nodes.reduce((max, n) => Math.max(n.depth + 1, max), 0);
+  const color = d3.scaleSequential([0, depth], d3.interpolateYlGnBu);
 
-const nodeCircles = group
-  .append('g')
-  .style('transform', 'translate(50%, 50%)')
-  .selectAll('circle')
-  .data(nodes)
-  .join('circle')
-  .attr('r', (d) => nodeRadii[d.depth] ?? 4)
-  .attr('fill', (d) => color(d.depth))
-  .attr('stroke', '#888888')
-  .call(tooltipHandlers, { tooltip, tooltipTarget, width, height, color })
-  .call(dragHandlers(simulation));
+  linkLines = linkLines.data(links).join('line').attr('stroke', '#666666');
 
-svg.call(zoomHandler(group));
+  nodeCircles = nodeCircles
+    .data(nodes)
+    .join('circle')
+    .attr('r', (d) => nodeRadii[d.depth] ?? 4)
+    .attr('fill', (d) => color(d.depth))
+    .attr('stroke', '#888888')
+    .call(tooltipHandlers, { tooltip, tooltipTarget, width, height, color })
+    .call(dragHandlers(simulation));
 
-container.append(svg.node());
+  svg.call(zoomHandler(group));
 
-simulation.on('tick', () => {
-  linkLines
-    .attr('x1', (d) => d.source.x)
-    .attr('y1', (d) => d.source.y)
-    .attr('x2', (d) => d.target.x)
-    .attr('y2', (d) => d.target.y);
+  container.append(svg.node());
+  simulation.force('link').links(links);
+  simulation.nodes(nodes);
+  simulation.alpha(1).restart();
 
-  nodeCircles.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
+  simulation.on('tick', () => {
+    linkLines
+      .attr('x1', (d) => d.source.x)
+      .attr('y1', (d) => d.source.y)
+      .attr('x2', (d) => d.target.x)
+      .attr('y2', (d) => d.target.y);
+
+    nodeCircles.attr('cx', (d) => d.x).attr('cy', (d) => d.y);
+  });
+}
+
+getRecordsButton.addEventListener('click', () => {
+  getApiUrl().then((data) => {
+    renderGraph(data);
+  });
 });
-
-const getRecordsButton = document.getElementById('getRecordsButton');
-getRecordsButton.addEventListener('click', getApiUrl);
