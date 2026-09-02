@@ -25,6 +25,8 @@ export const dragHandlers = (simulation) => {
 
 // Tooltips
 export const tooltipHandlers = (selection, { tooltip, tooltipTarget, width, height, color }) => {
+  tooltip.node().removeEventListener('close', restoreColor);
+
   function showTooltip(evt, d) {
     const [mx, my] = d3.pointer(evt);
     const nodeData = d.data?.nodeData ?? d.data;
@@ -33,7 +35,7 @@ export const tooltipHandlers = (selection, { tooltip, tooltipTarget, width, heig
         return (
           output
           + `<p class='tooltip-text'>
-        <b>${entry[0]}:</b> <a href="${entry[1]}" rel="nofollow">${entry[1]}</a>
+        <b>${entry[0]}:</b> <a href="${entry[1]}" rel="nofollow" target="_blank">${entry[1]}</a>
         </p>`
         );
       }
@@ -56,10 +58,12 @@ export const tooltipHandlers = (selection, { tooltip, tooltipTarget, width, heig
     tooltip.node().focus();
   }
 
-  selection.on('click', showTooltip);
-  tooltip.node().addEventListener('close', (evt) => {
+  function restoreColor() {
     tooltipTarget.attr('fill', (d) => color(d.depth));
-  });
+  }
+
+  selection.on('click', showTooltip);
+  tooltip.node().addEventListener('close', restoreColor);
 
   return selection;
 };
