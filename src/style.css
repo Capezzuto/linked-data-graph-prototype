@@ -86,7 +86,7 @@ body {
 }
 
 .input-container input {
-  margin-bottom: 20px;
+  margin-bottom: 28px;
   width: clamp(300px, 90%, 650px);
   border: 2px solid #9ca3af;
 }
@@ -100,13 +100,13 @@ body {
 }
 
 .input-container input:user-invalid {
-  border-color: #ff0000;
+  border-color: #aa4242;
 }
 
-.input-container .error {
-  color: #ff0000;
+.input-container .input-error {
+  color: #aa4242;
   position: absolute;
   top: auto;
   bottom: 0;
-  left: 0;
+  left: 20px;
 }
