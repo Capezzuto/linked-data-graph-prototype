@@ -2,8 +2,8 @@ import * as d3 from 'd3';
 import { formatData } from './format.js';
 import { zoomHandler, dragHandlers, tooltipHandlers, getApiData, checkInput, setErrorMessage } from './handlers.js';
 
-const width = Math.min(800, window.screen.width - 120);
-const height = Math.min(800, window.screen.height - 120);
+const width = window.innerWidth;
+const height = window.innerHeight;
 const container = document.getElementById('app');
 const getRecordsButton = document.getElementById('getRecordsButton');
 const input = document.getElementById('apiUrlField');
@@ -31,7 +31,7 @@ const svg = d3
   .create('svg')
   .attr('width', width)
   .attr('height', height)
-  .attr('viewbox', `${width / 2} ${height / 2} ${width} ${height}`)
+  .attr('viewbox', `0 0 ${width} ${height}`)
   .style('background', '#202828');
 
 const group = svg.append('g');
