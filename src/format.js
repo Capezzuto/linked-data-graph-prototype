@@ -2,7 +2,7 @@ export const formatData = (result, entry) => {
   // default property seems to reproduce structure of larger object, so omit for now
   if (entry[0] === 'default') return result;
 
-  if (typeof entry[1] === 'string' || typeof entry[1] === 'number' || typeof entry[1] === boolean) {
+  if (typeof entry[1] === 'string' || typeof entry[1] === 'number' || typeof entry[1] === 'boolean') {
     result.nodeData[entry[0]] = entry[1];
     return result;
   }
