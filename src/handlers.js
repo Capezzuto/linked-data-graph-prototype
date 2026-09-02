@@ -79,18 +79,22 @@ export const zoomHandler = (g) => {
 };
 
 // Input field
-const validate = (str) => {
+const _validate = (str) => {
   const regex =
     /^(https\:\/\/|http\:\/\/|)data\.getty\.edu\/museum\/collection\/(object|place|document|group|person|exhibition|activity)/g;
   if (!str) return 'Please enter a valid url';
   if (!regex.test(str)) return 'Please enter a valid url';
 };
 
-export const getApiUrl = () => {
+export const setErrorMessage = (error) => {
+  const messageElem = document.querySelector('.input-error');
+  messageElem.innerText = error;
+};
+
+export const getApiUrl = async () => {
   const input = document.getElementById('apiUrlField');
   const url = input.value;
-
-  const error = validate(url);
+  const error = _validate(url);
 
   if (error) {
     input.setCustomValidity(error);
@@ -98,17 +102,26 @@ export const getApiUrl = () => {
       reject(new Error(error));
     });
   }
+
   input.setCustomValidity('');
-  return fetch(url).then((res) => res.json());
+  setErrorMessage('');
+  const response = await fetch(url);
+  if (response.status >= 400) {
+    return new Promise((_, reject) => {
+      reject(new Error('Bad request'));
+    });
+  }
+  return response.json();
 };
 
 export const checkInput = (evt) => {
   const input = evt.currentTarget;
-  console.log('input.value', input.value);
-  const error = validate(input.value);
+  const error = _validate(input.value);
   if (error) {
     input.setCustomValidity(error);
+    setErrorMessage(error);
     return;
   }
+  setErrorMessage('');
   input.setCustomValidity('');
 };
